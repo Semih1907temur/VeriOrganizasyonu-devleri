@@ -1,0 +1,166 @@
+
+CREATE TABLE Kategori (
+    kategoriId SERIAL PRIMARY KEY,
+    kategoriAd VARCHAR(255) NOT NULL,
+    kategoriAciklama TEXT
+);
+
+-- Satıcı Tablosu
+CREATE TABLE  Satici (
+    saticiId SERIAL PRIMARY KEY,
+    saticiFirmaAd VARCHAR(255) NOT NULL,
+    saticiEmail VARCHAR(255) NOT NULL
+);
+
+-- Müşteri Tablosu
+CREATE TABLE  Musteri (
+    mustId SERIAL PRIMARY KEY,
+    mustAd VARCHAR(255) NOT NULL,
+    mustSoyad VARCHAR(255) NOT NULL,
+    mustSifre VARCHAR(255) NOT NULL
+);
+
+-- Ürün Tablosu (One-to-Many Kategori, One-to-Many Satıcı)
+CREATE TABLE  Urun (
+    urunId SERIAL PRIMARY KEY,
+    urunAd VARCHAR(255) NOT NULL,
+    urunAciklama TEXT,
+    urunFiyat NUMERIC(10, 2) NOT NULL,
+    urunStok INT NOT NULL,
+    kategoriId INT REFERENCES Kategori(kategoriId),
+    saticiId INT REFERENCES Satici(saticiId)
+);
+
+-- Sepet Tablosu (One-to-Many Müşteri)
+CREATE TABLE  Sepet (
+    sepetId SERIAL PRIMARY KEY,
+    mustId INT REFERENCES Musteri(mustId)
+);
+
+-- Adres Tablosu (One-to-One Müşteri)
+CREATE TABLE  Adres (
+    adresId SERIAL PRIMARY KEY,
+    mustId INT UNIQUE REFERENCES Musteri(mustId),
+    adres TEXT NOT NULL,
+    sehir VARCHAR(255) NOT NULL,
+    postaKodu VARCHAR(10) NOT NULL
+);
+
+-- Kargo Tablosu (One-to-Many Adres, One-to-Many Müşteri)
+CREATE TABLE Kargo (
+    kargoId SERIAL PRIMARY KEY,
+    adresId INT REFERENCES Adres(adresId),
+    mustId INT REFERENCES Musteri(mustId),
+    kargoFirma VARCHAR(255) NOT NULL,
+    kargoTakipNo VARCHAR(255) NOT NULL
+);
+
+-- Ödeme Tablosu (One-to-Many Müşteri)
+CREATE TABLE  Odeme (
+    odemeId SERIAL PRIMARY KEY,
+    mustId INT REFERENCES Musteri(mustId),
+    odemeTutar NUMERIC(10, 2) NOT NULL,
+    odemeTarih TIMESTAMP NOT NULL
+);
+
+-- Kampanya Tablosu
+CREATE TABLE  Kampanya (
+    kampanyaId SERIAL PRIMARY KEY,
+    kampanyaAd VARCHAR(255) NOT NULL,
+    indirimOrani NUMERIC(5, 2) NOT NULL
+);
+
+-- Sipariş Tablosu (One-to-Many Müşteri, One-to-Many Sepet, One-to-Many Adres, One-to-Many Ödeme, One-to-Many Kargo, One-to-Many Kampanya)
+CREATE TABLE  Siparis (
+    siparisId SERIAL PRIMARY KEY,
+    mustId INT REFERENCES Musteri(mustId),
+    siparisTarih TIMESTAMP NOT NULL,
+    siparisTutar NUMERIC(10, 2) NOT NULL,
+    sepetId INT REFERENCES Sepet(sepetId),
+    adresId INT REFERENCES Adres(adresId),
+    odemeId INT REFERENCES Odeme(odemeId),
+    kargoId INT REFERENCES Kargo(kargoId),
+    kampanyaId INT REFERENCES Kampanya(kampanyaId)
+);
+
+-- Yorum Tablosu (One-to-Many Müşteri, One-to-Many Ürün)
+CREATE TABLE  Yorum (
+    yorumId SERIAL PRIMARY KEY,
+    mustId INT REFERENCES Musteri(mustId),
+    urunId INT REFERENCES Urun(urunId),
+    yorumIcerik TEXT,
+    yorumPuan INT
+);
+
+-- Favoriler Tablosu (One-to-Many Müşteri, One-to-Many Ürün)
+CREATE TABLE  Favoriler (
+    favoriId SERIAL PRIMARY KEY,
+    mustId INT REFERENCES Musteri(mustId),
+    urunId INT REFERENCES Urun(urunId)
+);
+
+-- Geçmiş Tablosu (One-to-Many Müşteri, One-to-Many Sipariş, One-to-Many Ürün)
+CREATE TABLE  Gecmis (
+    gecmisId SERIAL PRIMARY KEY,
+    mustId INT REFERENCES Musteri(mustId),
+    siparisId INT REFERENCES Siparis(siparisId),
+    urunId INT REFERENCES Urun(urunId),
+    goruntulemeTarih TIMESTAMP NOT NULL
+);
+
+-- İade Tablosu (One-to-Many Müşteri, One-to-Many Sipariş, One-to-Many Ürün)
+CREATE TABLE  Iade (
+    iadeId SERIAL PRIMARY KEY,
+    mustId INT REFERENCES Musteri(mustId),
+    siparisId INT REFERENCES Siparis(siparisId),
+    urunId INT REFERENCES Urun(urunId),
+    iadeSebep TEXT,
+    iadeTutar NUMERIC(10, 2) NOT NULL
+);
+
+-- Puan/Kupon Tablosu (One-to-Many Müşteri)
+CREATE TABLE PuanKupon (
+    puanKuponId SERIAL PRIMARY KEY,
+    mustId INT REFERENCES Musteri(mustId),
+    deger NUMERIC(10, 2) NOT NULL,
+    sonKullanmaTarih TIMESTAMP NOT NULL
+);
+
+-- İletişim Tablosu (One-to-Many Satıcı)
+CREATE TABLE  Iletisim (
+    iletisimId SERIAL PRIMARY KEY,
+    saticiId INT REFERENCES Satici(saticiId),
+    konu VARCHAR(255) NOT NULL,
+    mesaj TEXT NOT NULL
+);
+
+-- Hesap Tablosu (One-to-One Müşteri, One-to-One Satıcı)
+CREATE TABLE  Hesap (
+    hesapId SERIAL PRIMARY KEY,
+    mustId INT UNIQUE REFERENCES Musteri(mustId),
+    saticiId INT UNIQUE REFERENCES Satici(saticiId),
+    hesapTip VARCHAR(50) NOT NULL, -- "Standart" veya "Premium"
+    hesapTarih TIMESTAMP NOT NULL
+);
+
+-- Stok Tablosu (One-to-Many Ürün)
+CREATE TABLE  Stok (
+    stokId SERIAL PRIMARY KEY,
+    urunId INT REFERENCES Urun(urunId),
+    miktar INT NOT NULL
+);
+
+-- Filtre Tablosu (One-to-Many Kategori)
+CREATE TABLE  Filtre (
+    filtreId SERIAL PRIMARY KEY,
+    filtreAd VARCHAR(255) NOT NULL,
+    kategoriId INT REFERENCES Kategori(kategoriId)
+);
+
+-- Öneri Tablosu (Many-to-Many Müşteri, Many-to-Many Satıcı, Many-to-Many Ürün)
+CREATE TABLE  Oneri (
+    oneriId SERIAL PRIMARY KEY,
+    mustId INT REFERENCES Musteri(mustId),
+    urunId INT REFERENCES Urun(urunId),
+    saticiId INT REFERENCES Satici(saticiId)
+);
